@@ -1,0 +1,178 @@
+# ============================================================
+# Qlib Studio - 完整配置示例
+# 此文件展示所有可配置参数，可直接用于 qrun 命令
+# ============================================================
+
+# Qlib 初始化
+qlib_init:
+  provider_uri: "~/.qlib/qlib_data/cn_data"
+  region: cn
+  auto_mount: true
+  concurrent_limit: 6
+
+# 市场与基准
+market: csi300
+benchmark: SH000300
+
+# 数据处理器配置
+data_handler_config:
+  start_time: 2008-01-01
+  end_time: 2024-12-31
+  fit_start_time: 2008-01-01
+  fit_end_time: 2014-12-31
+  instruments: csi300
+
+# 训练任务定义
+task:
+  # 模型配置 - LightGBM
+  model:
+    class: LGBModel
+    module_path: qlib.contrib.model.gbdt
+    kwargs:
+      # 核心参数
+      loss: mse
+      learning_rate: 0.05
+      num_leaves: 64
+      max_depth: -1
+      min_child_samples: 20
+      
+      # 正则化
+      feature_fraction: 0.8
+      bagging_fraction: 0.8
+      bagging_freq: 5
+      lambda_l1: 0.0
+      lambda_l2: 0.0
+      
+      # 训练控制
+      num_boost_round: 1000
+      early_stopping_rounds: 50
+      verbose_eval: 50
+      
+      # 多任务学习（可选）
+      # num_tasks: 1
+      # task_weights: [1.0]
+
+  # 数据集配置
+  dataset:
+    class: DatasetH
+    module_path: qlib.data.dataset
+    kwargs:
+      handler:
+        class: Alpha158
+        module_path: qlib.contrib.data.handler
+        kwargs:
+          start_time: 2008-01-01
+          end_time: 2024-12-31
+          fit_start_time: 2008-01-01
+          fit_end_time: 2014-12-31
+          instruments: csi300
+          # 自定义因子表达式（可选）
+          # custom_factor_expr: |
+          #   F1 = (CLOSE - REF(CLOSE, 1)) / REF(CLOSE, 1)
+          #   F2 = VOLUME / REF(VOLUME, 1)
+      segments:
+        train: [2008-01-01, 2014-12-31]
+        valid: [2015-01-01, 2016-12-31]
+        test:  [2017-01-01, 2024-12-31]
+
+  # 记录器 - 自动保存信号和回测结果
+  record:
+    - class: SignalRecord
+      module_path: qlib.workflow.record_temp
+    
+    - class: PortAnaRecord
+      module_path: qlib.workflow.record_temp
+      kwargs:
+        config:
+          strategy:
+            class: TopkDropoutStrategy
+            module_path: qlib.contrib.strategy.signal_strategy
+            kwargs:
+              topk: 50
+              n_drop: 5
+              signal_type: score
+              # 权重约束（可选）
+              # weight_constraints:
+              #   max_weight: 0.1
+              #   min_weight: 0.01
+          
+          backtest:
+            start_time: 2017-01-01
+            end_time: 2024-12-31
+            account: 100000000
+            benchmark: SH000300
+            exchange_kwargs:
+              limit_threshold: 0.095
+              deal_price: close
+              open_cost: 0.0005
+              close_cost: 0.0015
+              min_cost: 5
+              trade_unit: 100
+              cancel_unit: 100
+              open_tax: 0.0
+              close_tax: 0.001
+              # 滑点模型（可选）
+              # slippage: 0.0001
+
+# ============================================================
+# 进阶配置示例（取消注释即可使用）
+# ============================================================
+
+# 使用 Alpha360 因子库（360 个原始特征）
+# data_handler_config:
+#   class: Alpha360
+#   instruments: csi500
+
+# 使用深度学习模型 (PyTorch MLP)
+# task:
+#   model:
+#     class: MLPModel
+#     module_path: qlib.contrib.model.pytorch
+#     kwargs:
+#       hidden_size: 512
+#       num_layers: 3
+#       dropout: 0.1
+#       batch_size: 2048
+#       epochs: 100
+#       optimizer: adam
+#       lr_scheduler: cosine
+#       loss: mse
+
+# 使用 Transformer 时序模型
+# task:
+#   model:
+#     class: TransformerModel
+#     module_path: qlib.contrib.model.pytorch_transformer
+#     kwargs:
+#       d_model: 256
+#       nhead: 8
+#       num_layers: 4
+#       dim_feedforward: 1024
+#       dropout: 0.1
+#       batch_size: 1024
+#       epochs: 150
+
+# 自定义信号策略
+# strategy:
+#   class: CustomStrategy
+#   module_path: qlib.contrib.strategy.signal_strategy
+#   kwargs:
+#     topk: 30
+#     n_drop: 3
+#     signal_type: weight
+#     # 风险模型
+#     risk_model:
+#       class: RiskModel
+#       kwargs:
+#         cov_type: sample_cov
+#         window_size: 252
+
+# 在线学习 / 滚动训练
+# task:
+#   model:
+#     class: OnlineLGBModel
+#     module_path: qlib.contrib.model.online
+#     kwargs:
+#       retrain_frequency: weekly
+#       warmup_periods: 20
+#       learning_rate: 0.01

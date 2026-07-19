@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  # 后端 API 服务
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    container_name: qlib-studio-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - qlib_data:/root/.qlib/qlib_data
+      - ./experiments:/app/experiments
+      - ./logs:/app/logs
+    environment:
+      - QLIB_DATA_PATH=/root/.qlib/qlib_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端 Web 服务
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    container_name: qlib-studio-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Redis (用于任务队列)
+  redis:
+    image: redis:7-alpine
+    container_name: qlib-studio-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  qlib_data:
+    driver: local
