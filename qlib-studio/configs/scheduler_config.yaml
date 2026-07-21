@@ -1,0 +1,162 @@
+# ============================================================
+# Qlib Studio 定时任务调度配置
+# ============================================================
+# 说明：
+# - cron 表达式格式：分 时 日 月 周 (5 个字段)
+# - 示例："0 20 * * 5" 表示每周五 20:00 执行
+# - 更多示例参考：https://crontab.guru/
+# ============================================================
+
+# -------------------------------------------------------------
+# 滚动训练任务配置
+# -------------------------------------------------------------
+rolling_train:
+  enabled: true
+  # 每周五晚上 8 点执行滚动训练
+  cron: "0 20 * * 5"
+  
+  # 滚动训练参数
+  params:
+    # 训练窗口大小（交易日天数），默认 3 年
+    window_size: 630
+    # 滚动步长（交易日天数），默认 1 年
+    step_size: 252
+    # 模式：rolling(固定窗口) / expanding(扩展窗口)
+    mode: "rolling"
+    # 验证集大小
+    valid_size: 252
+    # 测试集大小
+    test_size: 252
+  
+  # 日历范围
+  calendar:
+    start: "2018-01-01"
+    end: "2024-12-31"
+
+
+# -------------------------------------------------------------
+# 每日预测任务配置
+# -------------------------------------------------------------
+daily_predict:
+  enabled: true
+  # 每个交易日早上 9 点执行预测（A 股 9:30 开盘）
+  cron: "0 9 * * 1-5"
+  
+  # 预测参数
+  params:
+    # 股票池：csi300/csi500/all
+    universe: "csi300"
+    # 持仓数量
+    top_k: 50
+    # 每期调出数量
+    n_drop: 5
+    # 数据源：akshare/tushare/qlib
+    data_provider: "akshare"
+    # 输出格式：json/csv/parquet
+    output_format: "json"
+
+
+# -------------------------------------------------------------
+# 数据更新任务配置
+# -------------------------------------------------------------
+data_update:
+  enabled: true
+  # 每天下午 6 点更新数据（收盘后）
+  cron: "0 18 * * *"
+  
+  # 数据更新参数
+  params:
+    # 更新的市场
+    markets: ["cn"]
+    # 是否更新日线数据
+    update_daily: true
+    # 是否更新分钟线数据
+    update_minute: false
+    # 是否更新因子数据
+    update_factors: true
+
+
+# -------------------------------------------------------------
+# 模型评估任务配置
+# -------------------------------------------------------------
+model_evaluation:
+  enabled: false
+  # 每天早上 8 点评估模型表现
+  cron: "0 8 * * 1-5"
+  
+  # 评估参数
+  params:
+    # 评估指标
+    metrics: ["ic", "rank_ic", "information_ratio", "sharpe"]
+    # 评估周期（天）
+    lookback_days: 20
+    # 告警阈值
+    ic_threshold: 0.02
+    # 是否自动降级
+    auto_fallback: true
+
+
+# -------------------------------------------------------------
+# 系统维护任务配置
+# -------------------------------------------------------------
+system_maintenance:
+  enabled: false
+  # 每周日凌晨 2 点执行
+  cron: "0 2 * * 0"
+  
+  # 维护参数
+  params:
+    # 清理旧日志（保留天数）
+    cleanup_logs_days: 30
+    # 清理旧模型（保留数量）
+    cleanup_models_count: 10
+    # 是否压缩旧数据
+    compress_old_data: true
+
+
+# -------------------------------------------------------------
+# 通知配置
+# -------------------------------------------------------------
+notification:
+  # 通知方式
+  channels:
+    - type: "email"
+      enabled: false
+      recipients: ["admin@example.com"]
+      smtp_server: "smtp.example.com"
+      smtp_port: 587
+    
+    - type: "dingtalk"
+      enabled: false
+      webhook_url: "https://oapi.dingtalk.com/robot/send?access_token=xxx"
+    
+    - type: "slack"
+      enabled: false
+      webhook_url: "https://hooks.slack.com/services/xxx"
+  
+  # 通知事件
+  events:
+    - "task_success"
+    - "task_failure"
+    - "model_degraded"
+    - "system_error"
+
+
+# -------------------------------------------------------------
+# 调度器全局配置
+# -------------------------------------------------------------
+scheduler:
+  # 时区
+  timezone: "Asia/Shanghai"
+  # 调度器类型：background/blocking
+  type: "background"
+  # 任务执行超时时间（秒）
+  task_timeout: 7200
+  # 任务失败重试次数
+  max_retries: 3
+  # 重试间隔（秒）
+  retry_interval: 300
+  # 错过的任务是否合并执行
+  coalesce: true
+  # 任务容错时间（秒）
+  misfire_grace_time: 3600

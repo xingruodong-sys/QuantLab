@@ -1,0 +1,56 @@
+```
+# Dependencies
+qlib-studio/backend/venv/
+qlib-studio/backend/__pycache__/
+__pycache__/
+*.egg-info/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python specific
+*.pyc
+*.pyo
+*.pyd
+*.py~
+*.py.class
+*.so
+*.dylib
+*.dll
+
+# Build artifacts
+dist/
+build/
+*.egg
+*.whl
+*.zip
+*.tar.gz
+*.tar.bz2
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```
